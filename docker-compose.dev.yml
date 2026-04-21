@@ -1,0 +1,26 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: stockapp-redis-dev
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: stockapp-postgres-dev
+    environment:
+      POSTGRES_DB: stocks
+      POSTGRES_USER: stocks
+      POSTGRES_PASSWORD: stocks
+    ports:
+      - "5432:5432"
+    volumes:
+      - stockapp_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stocks -d stocks"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  stockapp_pg_data:
