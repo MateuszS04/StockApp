@@ -1,6 +1,7 @@
 package com.example.stockapp.dto;
 
-import java.util.Map;
+import java.util.List;
 
-public record StockHoldings(Map<String, Integer> stocks) {
+
+public record StockHoldings(List<StockItem> stocks) {
 }

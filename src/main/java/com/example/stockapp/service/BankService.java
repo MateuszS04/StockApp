@@ -2,17 +2,19 @@ package com.example.stockapp.service;
 
 import com.example.stockapp.dto.SetStocksRequest;
 import com.example.stockapp.dto.StockHoldings;
+import com.example.stockapp.dto.StockItem;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class BankService {
 
-    static final String BANK_STOCKS_HASH="bank:stocks"; // holds quantities of stocks currently available
-    static final String KNOWN_STOCKS_SET="bank:known_stocks"; // tracks all stocks names that have ever existed
+    public static final String BANK_STOCKS_HASH="bank:stocks"; // holds quantities of stocks currently available
+    public static final String KNOWN_STOCKS_SET="bank:known_stocks"; // tracks all stocks names that have ever existed
     // it is separate because when stock hits 0 it's still known
     // and the buy request won't return 404 but 400(sold out)
     private final StringRedisTemplate redis;
@@ -22,17 +24,28 @@ public class BankService {
     }
 
     public void setBankStocks(SetStocksRequest request){
+        //iterating through the list
         Map<String, String> asString=new HashMap<>();
-        request.stocks().forEach((name,qty)-> asString.put(name,String.valueOf(qty)));
+        for(StockItem item : request.stocks()){
+            asString.put(item.name(), String.valueOf(item.quantity()));
+        }
         redis.delete(BANK_STOCKS_HASH);
         redis.opsForHash().putAll(BANK_STOCKS_HASH,asString);
-        redis.opsForSet().add(KNOWN_STOCKS_SET,request.stocks().keySet().toArray(new String[0]));
 
+        String[] names= request.stocks().stream().map(StockItem::name).toArray(String[]::new);
+        redis.opsForSet().add(KNOWN_STOCKS_SET,names);
     }
+
+
     public StockHoldings getBankStocks(){
+        //returns a list built from redis hash
         Map<Object, Object> raw=redis.opsForHash().entries(BANK_STOCKS_HASH);
-        Map<String, Integer> result=new HashMap<>();
-        raw.forEach((k,v)-> result.put(k.toString(),Integer.parseInt(v.toString())));
-        return new StockHoldings(result);
+        List<StockItem> items =raw.entrySet().stream()
+                .map(e-> new StockItem(e.getKey().toString(),Integer.parseInt(e.getValue().toString()))).toList();
+
+        return new StockHoldings(items);
     }
 }
+//redis storage format is unchanged still hold stock_name-> quantity
+// I use the hash not JSON because I will use the LUA script which only
+//works on hashes for atomic increments
