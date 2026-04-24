@@ -8,5 +8,5 @@ import java.util.Map;
 
 public record SetStocksRequest (
     @NotEmpty
-    Map<@NotNull String, @NotNull @PositiveOrZero Integer> stocks
+    Map<@NotNull String, @NotNull @PositiveOrZero Integer> stocks //definition of model for post request
 ) {}
