@@ -25,9 +25,9 @@ spring:
       host: ${SPRING_REDIS_HOST:localhost}
       port: ${SPRING_REDIS_PORT:6379}
 
-  Jackson:
+  jackson:
     mapper:
-      accept-case-insensitive-enums:
+      accept-case-insensitive-enums: true
 
   threads: #enabling virtual threads for handling the multiple requests efficiently
     virtual:
