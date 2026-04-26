@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.validation.FieldError;
 
@@ -22,6 +23,12 @@ public class GlobalExceptionHandler  {
        return error(HttpStatus.NOT_FOUND, ex.getMessage());
        //Stock name not in bank:known_stocks, response 404 + JSON body
    }
+
+    @ExceptionHandler(WalletNotKnownException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String,String> handleWalletNotKnown(WalletNotKnownException ex){
+        return Map.of("error", ex.getMessage());
+    }
 
    @ExceptionHandler(InsufficientStockException.class)
     public ResponseEntity<Map<String,Object>>handleInsufficient(InsufficientStockException ex){
@@ -49,7 +56,7 @@ public class GlobalExceptionHandler  {
        return error(HttpStatus.BAD_REQUEST, "Malformed JSON or invalid value");
        // JSON malformed or type value not in enum, response 400 + generic message
     }
-
+    
     private ResponseEntity<Map<String,Object>> error(HttpStatus status, String message){
        return ResponseEntity.status(status).body(baseBody(status, message));
     }
