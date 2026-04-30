@@ -1,10 +1,8 @@
 package com.example.stockapp;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class StockAppApplicationTests {
+class StockAppApplicationTests extends AbstractIntegrationTest{
 
     @Test
     void contextLoads() {
