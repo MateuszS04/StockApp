@@ -43,7 +43,7 @@ class BankServiceTest {
     }
 
     @Test
-     void setbankStocks_deletesExtension_writesNewEntries_andTracksNames(){
+     void setBankStocks_deletesExtension_writesNewEntries_andTracksNames(){
         SetStocksRequest request = new SetStocksRequest(List.of(
                 new StockItem("AAPL", 10),
                 new StockItem("GOOG", 5)
