@@ -5,21 +5,48 @@ Trades are atomic, audit log holds the information about the transactions. Syste
 
 ## Quick start
 
+The only host requirement is **Docker** (Engine 20.10+ with the `compose` plugin).
+The Java/Maven toolchain runs inside the build container, so no local JDK is needed.
+
+#### Linux / macOS
+
 ```bash
 ./run.sh 8080
+```
+
+#### Windows (cmd.exe / PowerShell)
+
+```cmd
+run.cmd 8080
+```
+
+If you prefer to skip the launcher entirely, on any OS you can run:
+
+```bash
+PORT=8080 docker compose up --build
 ```
 
 Replace `8080` with any port. The default if omitted is `8080`.
 The API will be available at `http://localhost:<PORT>` once all services report
 healthy (~10-15 seconds on first run; ~3 seconds on subsequent runs).
 
+The Docker images are multi-arch (`linux/amd64` and `linux/arm64`), so the
+same command works on Intel/AMD machines as well as Apple Silicon and ARM
+Linux.
+
 
 #### To stop:
 
 ```bash
-docker compose down  #keep postgres data
-docker compose down -v  # also wipe postgres data 
+docker compose down       # keep Postgres + Redis data
+docker compose down -v    # also wipe Postgres + Redis data (true cold start)
 ```
+
+> **State persistence.** Both Postgres (audit log) and Redis (bank/wallet state)
+> are backed by named Docker volumes, so a plain `docker compose down` followed
+> by `./run.sh` resumes exactly where you left off. To satisfy the spec line
+> *"Initially there should be no wallets and bank account should be empty"*,
+> use `docker compose down -v` for a clean slate.
 ### Overview what it does
 
 - Bank - holds  the global pool of available stocks. Set with `POST /stocks`.
@@ -57,26 +84,42 @@ Atomic: either the trade is fully completed on Redis and recorded in the audit l
 ```bash
 curl -X POST http://localhost:8080/wallets/w1/stocks/AAPL \
     -H 'Content-Type: application/json' \
-    -d '{"type":"BUY"}'
+    -d '{"type":"buy"}'
 ```
-`type` is case-insensitive 
 
-| Status          |               Meaning                | 
-|:----------------|:------------------------------------:| 
-| 200 OK          |             Trade succed             | 
-| 400 Bad request | Inssuficient stock or malformed body |
-| 404 Not found   |      Stock no known to the bank      | 
- 
+The spec writes `{type: "sell|buy"}` in lowercase. Both casings are accepted
+(`buy`/`BUY`/`Buy`) thanks to Jackson's `accept-case-insensitive-enums`, so
+clients that follow the spec literally are not broken by our internal enum.
+
+| Status          |                 Meaning                  |
+|:----------------|:----------------------------------------:|
+| 200 OK          |              Trade succeeded             |
+| 400 Bad Request | Insufficient stock or malformed body     |
+| 404 Not Found   | Stock not known to the bank              |
+
 `GET /wallets/{wallet_id}`
 
-Gets all stocks held by wallet 
+Gets all stocks held by wallet.
 
 ```bash
 curl http://localhost:8080/wallets/w1
 # {"id":"w1","stocks":[{"name":"AAPL","quantity":3}]}
 ```
 
-`404 Not Found` if the wallet or the stock is unknown.
+Returns `404 Not Found` if the wallet has never received a successful buy.
+
+`GET /wallets/{wallet_id}/stocks/{stock_name}`
+
+Returns the quantity of a single stock held by a wallet as a bare number.
+
+```bash
+curl http://localhost:8080/wallets/w1/stocks/AAPL
+# 3
+```
+
+Returns `404 Not Found` if the stock is unknown to the bank or the wallet has
+never received a successful buy. Returns `0` if the wallet exists but does not
+currently hold the requested (known) stock.
 
 `GET /log`
 
@@ -125,14 +168,15 @@ The container will be brought back up by Docker's `restart: unless-stopped` poli
 
 ### Why this shape
 
-| Concern        |                           Solution                           |
-|:---------------|:------------------------------------------------------------:|
-|Atomic trades under concurrency | Redis Lua script — single-threaded execution on Redis server |
-| Durable audit trail |             Posgres, `BIGSERIAL` insertion order             |
-|            Schema versioning    |     Flyway migrations `src/main/resources/db/migration`      |
-|        Multi-instance HA        |     Stateless Spring app + shared Redis/Postgres + Nginx     |
-|          Crash recovery      |      `restart: unless-stopped` + `proxy_next_upstream`       |
-|       Spec-required port flag         |       `start.sh PORT` accepts `$1`, defaults to `8080`       |
+| Concern                         |                           Solution                           |
+|:--------------------------------|:------------------------------------------------------------:|
+| Atomic trades under concurrency | Redis Lua script — single-threaded execution on Redis server |
+| Durable audit trail             |            Postgres, `BIGSERIAL` insertion order             |
+| Schema versioning               |     Flyway migrations `src/main/resources/db/migration`      |
+| Multi-instance HA               |     Stateless Spring app + shared Redis/Postgres + Nginx     |
+| Crash recovery                  |      `restart: unless-stopped` + `proxy_next_upstream`       |
+| State survives restarts         |  Postgres + Redis-AOF on named volumes (`pg_data`, `redis_data`) |
+| Spec-required port flag         |       `run.sh` / `run.cmd` accept `$1`, default `8080`       |
 
 ### Tech stack
 - Java 21 with virtual threads for request handling
@@ -198,7 +242,7 @@ The concurrency test is the most important one. It's the only thing that actuall
 
 #### Why Redis hashes plus a Lua script for trades 
 
-The trade flow is transactional move-one-share between two hashes (`bank:stocks' and 'wallet::<id>:stocks`). naive "GET-then-INCR" has a race two conccurent buyers see the same count abd both succeed.The Lua script runs atomically on the Redis server thread:
+The trade flow is a transactional move-one-share between two hashes (`bank:stocks` and `wallet:<id>:stocks`). A naive "GET-then-INCR" has a race: two concurrent buyers see the same count and both succeed. The Lua script runs atomically on the Redis server thread:
 
 ```Lua
 local available = redis.call('HGET', KEYS[1], ARGV[1])
@@ -208,7 +252,7 @@ redis.call('HINCRBY', KEYS[2], ARGV[1], 1)
 return 1
 ```
 
-Returns `1` on success, `0` on insufficient stock. Spring's `StringRedisTemplate.execute(RedisScript, keys, args)` calls it via `EVALSHA` after the first invocation, so there's no per-trade script transfer cost.
+Returns `1` on success, `0` on insufficient stock. Spring's `StringRedisTemplate.execute(RedisScript, keys, args)` calls it via `EVALSHA` after the first invocation, so there's no per-trade script-transfer cost.
 
 #### Why Postgres for the audit log 
 
@@ -218,7 +262,7 @@ Audit rows are append-only with a strict ordering requirement. A SQL database gi
 - A `BIGSERIAL` ID that approximates commit order well enough for this scope.
 - Standard tooling (psql) for incident investigation.
 
-Flyway runs `V1__create_audit_log.sql on startup`, `JPA's ddl-auto: validate` asserts the schema matches the entity. If they ever drift, the app fails to start loudly.
+Flyway runs `V1__create_audit_log.sql` on startup, then JPA's `ddl-auto: validate` asserts that the schema matches the entity. If they ever drift, the app fails to start loudly.
 
 #### Why separate JvmHalter bean
 
@@ -239,7 +283,7 @@ In production this would be addressed with one of:
 
 For the scale of this assessment (~10K ops) the simpler dual-write was chosen for clarity.
 
-#### 2. Audit log ordering]
+#### 2. Audit log ordering
 
 Audit rows are returned ordered by `BIGSERIAL` ID. Under concurrent writes, ID-assignment order can differ from transaction-commit order by a few rows.
 

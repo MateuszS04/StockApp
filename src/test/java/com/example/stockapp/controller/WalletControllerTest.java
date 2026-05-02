@@ -103,7 +103,7 @@ class WalletControllerTest {
 
     @Test
     void trade_insufficientStock_returns400() throws Exception{
-        doThrow(new InsufficientStockException("Bank has no 'AAPL available"))
+        doThrow(new InsufficientStockException("Bank has no 'AAPL' available"))
                 .when(tradeService).trade(anyString(), anyString(), any());
 
         mockMvc.perform(post("/wallets/w1/stocks/ZZZ")

@@ -3,10 +3,10 @@ package com.example.stockapp.exception;
 public class StockNotKnownException extends RuntimeException{
 
     /**
-     * Thrown when reauest reference a stock name that bank never had
+     * Thrown when a request references a stock name that the bank never had.
      */
 
     public StockNotKnownException(String stockName){
-        super("Unknown stock:"+stockName);
+        super("Unknown stock: " + stockName);
     }
 }

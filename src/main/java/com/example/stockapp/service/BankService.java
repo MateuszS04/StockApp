@@ -29,7 +29,13 @@ public class BankService {
         for(StockItem item : request.stocks()){
             asString.put(item.name(), String.valueOf(item.quantity()));
         }
+        // Reset both the quantities hash AND the known-stocks set so that
+        // POST /stocks fully replaces bank state. Without clearing
+        // KNOWN_STOCKS_SET, a stock omitted from the new payload would
+        // still be considered "known" and a buy for it would return 400
+        // (insufficient) instead of the spec-required 404 (unknown stock).
         redis.delete(BANK_STOCKS_HASH);
+        redis.delete(KNOWN_STOCKS_SET);
         redis.opsForHash().putAll(BANK_STOCKS_HASH,asString);
 
         String[] names= request.stocks().stream().map(StockItem::name).toArray(String[]::new);

@@ -2,6 +2,13 @@ services:
   redis:
     image: redis:7-alpine
     container_name: stockapp-redis
+    # Enable AOF persistence so the bank/wallet state in Redis survives
+    # restarts the same way the Postgres audit log does. Without this,
+    # restarting docker compose left audit rows referring to bank/wallet
+    # state that no longer existed.
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -28,8 +35,8 @@ services:
     container_name: stockapp-1
     command: ["8081"]
     environment:
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: "6379"
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/stocks
       SPRING_DATASOURCE_USERNAME: stocks
       SPRING_DATASOURCE_PASSWORD: stocks
@@ -45,8 +52,8 @@ services:
     container_name: stockapp-2
     command: ["8082"]
     environment:
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: "6379"
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/stocks
       SPRING_DATASOURCE_USERNAME: stocks
       SPRING_DATASOURCE_PASSWORD: stocks
@@ -69,3 +76,4 @@ services:
       - stockapp2
 volumes:
   pg_data:
+  redis_data:

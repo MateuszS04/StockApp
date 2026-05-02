@@ -52,6 +52,7 @@ class BankServiceTest {
         bankService.setBankStocks(request);
 
         verify(redis).delete(BankService.BANK_STOCKS_HASH);
+        verify(redis).delete(BankService.KNOWN_STOCKS_SET);
         verify(hashOps).putAll(eq(BankService.BANK_STOCKS_HASH), eq(Map.of(
                 "AAPL", "10",
                 "GOOG", "5"

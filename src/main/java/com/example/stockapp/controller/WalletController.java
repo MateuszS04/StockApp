@@ -1,12 +1,10 @@
 package com.example.stockapp.controller;
 
 import com.example.stockapp.dto.TradeRequest;
-import com.example.stockapp.dto.TradeType;
 import com.example.stockapp.dto.WalletResponse;
 import com.example.stockapp.service.TradeService;
 import com.example.stockapp.service.WalletService;
 import jakarta.validation.Valid;
-import org.springframework.boot.autoconfigure.batch.BatchTransactionManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 

@@ -5,11 +5,10 @@ import com.example.stockapp.exception.InsufficientStockException;
 import com.example.stockapp.exception.StockNotKnownException;
 import com.example.stockapp.model.AuditEntry;
 import com.example.stockapp.repository.AuditLogRepository;
-import jakarta.persistence.metamodel.StaticMetamodel;
-import jakarta.transaction.Transactional;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -58,8 +57,8 @@ public class TradeService {
 
         if(result != 1L){
             String message=(type==TradeType.BUY)
-                    ?"Bank has no '" + stockName + "'available"
-                    : "Wallet '" + walletId +"'has no '"+stockName +"' to sell";
+                    ? "Bank has no '" + stockName + "' available"
+                    : "Wallet '" + walletId + "' has no '" + stockName + "' to sell";
             throw new InsufficientStockException(message);
         }
 
