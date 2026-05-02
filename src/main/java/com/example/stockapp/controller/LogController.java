@@ -12,10 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class LogController {
     private final LogService logService;
 
+    // Stores the injected log service.
     public LogController(LogService logService){
         this.logService=logService;
     }
 
+    // GET /log: returns the full audit log.
     @GetMapping
     public LogResponse getLog(){
         return logService.getLog();

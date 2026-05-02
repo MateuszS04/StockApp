@@ -19,10 +19,12 @@ public class BankService {
     // and the buy request won't return 404 but 400(sold out)
     private final StringRedisTemplate redis;
 
+    // Stores the injected Redis template.
     public BankService(StringRedisTemplate redis){
         this.redis=redis;
     }
 
+    // Replaces bank holdings and known-stocks set.
     public void setBankStocks(SetStocksRequest request){
         //iterating through the list
         Map<String, String> asString=new HashMap<>();
@@ -43,6 +45,7 @@ public class BankService {
     }
 
 
+    // Reads current bank holdings from Redis.
     public StockHoldings getBankStocks(){
         //returns a list built from redis hash
         Map<Object, Object> raw=redis.opsForHash().entries(BANK_STOCKS_HASH);

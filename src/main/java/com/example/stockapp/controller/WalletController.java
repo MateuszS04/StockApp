@@ -14,11 +14,13 @@ public class WalletController {
     private final TradeService tradeService;
     private final WalletService walletService;
 
+    // Stores the injected trade and wallet services.
     public WalletController(TradeService tradeService, WalletService walletService){
         this.tradeService=tradeService;
         this.walletService=walletService;
     }
 
+    // POST /wallets/{id}/stocks/{name}: buys or sells one share.
     @PostMapping("/{walletId}/stocks/{stockName}")
     @ResponseStatus(HttpStatus.OK)
     public void trade(@PathVariable String walletId,
@@ -27,11 +29,13 @@ public class WalletController {
         tradeService.trade(walletId, stockName, request.type());
     }
 
+    // GET /wallets/{id}: returns full wallet contents.
     @GetMapping("/{walletId}")
     public WalletResponse getWallet(@PathVariable String walletId){
         return walletService.getWallet(walletId);
     }
 
+    // GET /wallets/{id}/stocks/{name}: returns one stock's quantity.
     @GetMapping("/{walletId}/stocks/{stockName}")
     public long getStockQuantity(@PathVariable String walletId, @PathVariable String stockName){
         return walletService.getStockQuantity(walletId,stockName);

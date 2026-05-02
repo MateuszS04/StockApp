@@ -19,10 +19,12 @@ public class ChaosController {
     private static final Logger log = LoggerFactory.getLogger(ChaosController.class);
     private final JvmHalter jvmHalter;
 
+    // Stores the injected JVM halter.
     public ChaosController(JvmHalter jvmHalter) {
         this.jvmHalter = jvmHalter;
     }
 
+    // POST /chaos: schedules this instance to die.
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
     public void chaos() {

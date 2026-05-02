@@ -12,5 +12,6 @@ public interface AuditLogRepository extends JpaRepository<AuditEntry, Long> {
      * Returns all audit entries in insertion order (id is bigserial, monotonically increasing)
      * used by GET /log
      */
+    // Lists every audit entry, oldest first.
     List<AuditEntry> findAllByOrderByIdAsc();
 }

@@ -11,10 +11,12 @@ import org.springframework.stereotype.Service;
 public class LogService {
     private final AuditLogRepository auditLogRepository;
 
+    // Stores the injected audit-log repository.
     public LogService(AuditLogRepository auditLogRepository){
         this.auditLogRepository=auditLogRepository;
     }
 
+    // Returns all audit entries in insertion order.
     @Transactional(readOnly = true)
     public LogResponse getLog(){
         var entries = auditLogRepository.findAllByOrderByIdAsc().stream().map(

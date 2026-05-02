@@ -16,10 +16,12 @@ public class WalletService {
 
     private final StringRedisTemplate redis;
 
+    // Stores the injected Redis template.
     public WalletService(StringRedisTemplate redis){
         this.redis=redis;
     }
 
+    // Returns all stocks held by the wallet.
     public WalletResponse getWallet(String walletId){
         Boolean known= redis.opsForSet().isMember(TradeService.KNOWN_WALLET_SET, walletId);
         if(!Boolean.TRUE.equals(known)){
@@ -33,6 +35,7 @@ public class WalletService {
         return new WalletResponse(walletId, items);
     }
 
+    // Returns one stock's quantity in the wallet.
     public long getStockQuantity(String walletId, String stockName){
         Boolean stockKnown=redis.opsForSet().isMember(BankService.KNOWN_STOCKS_SET, stockName);
         if(!Boolean.TRUE.equals(stockKnown)){

@@ -22,6 +22,7 @@ public class TradeService {
     private final RedisScript<Long> tradeScript;
     private final AuditLogRepository auditLogRepository;
 
+    // Stores Redis template, Lua script, and audit repository.
     public TradeService(StringRedisTemplate redis,
                         RedisScript<Long> tradeScript,
                         AuditLogRepository auditLogRepository){
@@ -42,6 +43,7 @@ public class TradeService {
      *  audit log contains successful trades
      */
 
+    // Atomically buys or sells one share.
     @Transactional
     public void trade(String walletId, String stockName, TradeType type){
         Boolean isKnown= redis.opsForSet().isMember(BankService.KNOWN_STOCKS_SET,stockName);
@@ -68,6 +70,7 @@ public class TradeService {
 
     }
 
+    // Builds the Redis hash key for a wallet.
     public static String walletKey(String walletId) {
         return WALLET_STOCKS_HASH_PREFIX + walletId + WALLET_STOCKS_HASH_SUFFIX;
     }

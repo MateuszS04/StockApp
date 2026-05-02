@@ -23,16 +23,19 @@ public class AuditEntry {
     @Column(name="inserted_at", nullable = false, updatable = false)
     private Instant insertedAt;
 
+    // No-arg constructor required by JPA/Hibernate.
     protected AuditEntry(){
         // empty constructor for loading rows form database
     }
 
+    // Builds an audit entry with the trade fields.
     public AuditEntry(String type, String walletId, String stockName){
         this.type=type;
         this.walletId=walletId;
         this.stockName=stockName;
     }
 
+    // Stamps insertedAt before the row is persisted.
     @PrePersist
     void onPersist(){
         if(insertedAt==null){
@@ -40,9 +43,14 @@ public class AuditEntry {
         }
     }
 
+    // Returns the database-generated primary key.
     public Long getId(){return id;}
+    // Returns the trade type ("buy" or "sell").
     public String getType(){return type;}
+    // Returns the wallet that performed the trade.
     public String getWalletId(){return walletId;}
+    // Returns the stock that was traded.
     public String getStockName(){return stockName;}
+    // Returns the timestamp the row was inserted.
     public Instant getInsertedAt(){return insertedAt;}
 }

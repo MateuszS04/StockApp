@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class JvmHalter {
 
+    // Hard-kills the JVM after a small delay.
     public void haltAfterDelay(){
         Thread killer= new Thread(()->{
             try{

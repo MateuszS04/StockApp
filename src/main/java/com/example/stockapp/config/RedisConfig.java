@@ -14,6 +14,7 @@ public class RedisConfig {
     // Auto creation of redisConnectionFactory, convenient way to read and write string based values
     //as stock quantities are numeric and serialize cleanly
 
+    // Exposes a String-keyed Redis template bean.
     @Bean
     public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory connectionFactory){
         return new StringRedisTemplate(connectionFactory);
@@ -23,7 +24,8 @@ public class RedisConfig {
      * on first execution and reuse the hash for subsequent evalsha calls
      */
 
-     @Bean
+    // Loads the atomic trade Lua script.
+    @Bean
     public RedisScript<Long> tradeScript(){
          DefaultRedisScript<Long> script= new DefaultRedisScript<>();
          script.setLocation(new ClassPathResource("scripts/trade.lua"));
