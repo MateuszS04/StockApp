@@ -6,16 +6,19 @@ Trades are atomic, audit log holds the information about the transactions. Syste
 ## Quick start
 
 ```bash
-docker compose up --build
+./run.sh 8080
 ```
 
-The API is then available at http://localhost:8080.
+Replace `8080` with any port. The default if omitted is `8080`.
+The API will be available at `http://localhost:<PORT>` once all services report
+healthy (~10-15 seconds on first run; ~3 seconds on subsequent runs).
+
 
 #### To stop:
 
 ```bash
-docker compose down
-docker compose down -v
+docker compose down  #keep postgres data
+docker compose down -v  # also wipe postgres data 
 ```
 ### Overview what it does
 
